@@ -4,12 +4,6 @@ Solution by Jack Klika 2020/11/05
 
 from collections import defaultdict
 
-# FX Rates for each currency from USD: e.g. $100 USD * .85 = 85 GBP
-fxFromUsdDict = {'USD': 1, 'GBP': .85, 'CNY': 6.35, 'JPY': 0.015}
-
-# Reporting currency
-RCURR = 'USD'
-
 class Security: # represents a security in a holding; a 'stock'
     def __init__(self, name, ticker, weight, country, region, currency, price, totalshares, eps, dps):
         self.name = name
@@ -23,21 +17,18 @@ class Security: # represents a security in a holding; a 'stock'
         self.eps = eps  # earnings per share
         self.dps = dps  # dividend per share
 
-        # Converts all prices to USD (local value * FX)
-        ## Creating "usdprice" attribute since other values are calculated from local currency
-        self.usdprice = self.price * fxFromUsdDict[self.currency]
-
         self.tmv = self.price*self.tso # Total Market Value (Price * Total Shares Outstanding) # Local currency
         self.per = self.price / self.eps # Price/Earnings ratio for each Security (Price / Earnings Per Share (EPS))
         self.dy = self.dps / self.price # Dividend Yield (Dividend Per Share (DPS) / Price)
-
+        
     def __str__(self): # python-native 'tostring()' method
-        return f"""{self.ticker} ({self.region}/{self.country})
+        return f"""{self.ticker} ({self.region}/{self.country}) {self.currency}${self.price:.2f}
         Total Market Value: ${self.tmv:.2f}
-        Price ({self.currency}): {self.price:.2f}
-        P/E Ratio: {self.per:.2f}
-        EPS: {self.eps:.2f}
+        Weight: {self.weight:.2f}
         """
+
+    def usdPrice(self):
+        return self.price * getUSDRate(self.currency)
 
 class Portfolio:
     def __init__(self, portid, securitylist):
@@ -56,16 +47,12 @@ class Portfolio:
         return retdict
 
     def positiveEpsOnly(self):
-        """ Filter the collection to show only the positions with a positive EPS """ 
+        """Filter the collection to show only the positions with a positive EPS""" 
         return [sec for sec in self.securitylist if sec.eps >= 0]
-        #print("EPS > 0:")
-        #[print(f"\t{sec.ticker}: {sec.currency}${sec.eps}") for sec in pos_eps]
 
-    def greaterThanOneMillionUSD(self):
-        """ Filter the collection to show only positions with a total market value > one million """
-        return [sec for sec in self.securitylist if sec.tmv*fxFromUsdDict[sec.currency] > 1e6]
-        #print(f"Total Market Value > $1,000,000:")
-        #[print(f"\t{sec.ticker}: ${sec.tmv:.2f}") for sec in tmv_gt_1m]
+    def tmvGreaterThanOneMillionUSD(self):
+        """Filter the collection to show only positions with a total market value > one million"""
+        return [sec for sec in self.securitylist if sec.tmv*getUSDRate(sec.currency) > 1e6]
 
     def validatePortfolioWeight(self):
         """Validate portfolio weight sums to 100 within 12 decimal point precision"""
@@ -81,28 +68,32 @@ class SecurityGrouping:
 
     def __str__(self):
         """Print a grouping: A defaultdict of lists with a key of the grouping and value of a list of securities or single security"""
+        retstr = ""
         for g in self.gdict:
-            print(f"{g}:")
+            retstr += f"{g}:\n"
             if isinstance(self.gdict[g], list):
-                for sec in self.gdict[g]: print("\t"+str(sec))
+                for sec in self.gdict[g]: retstr += str(sec) + "\n"
             else:
-                print("\t"+str(self.gdict[g]))
+                retstr += "\t"+str(self.gdict[g])
+
+        return retstr
 
     def largestWeightInGroup(self):
         gdict = self.gdict # shallow copy
         """Returns dict with keys of regions and value of security with largest weight"""
         for r in gdict: gdict[r] = max(gdict[r], key=lambda sec: sec.weight)
         return gdict
-        #lwig = largestWeightInGroup(groupBy(fruitfolio, 'region'))
-        #[print(f"\t{r}: {lwig[r].ticker} ({lwig[r].weight})") for r in lwig]
 
     def totalMarketValueByGroup(self):
         """Returns dict with keys of attribute and value total market value for that region"""
         gdict = self.gdict
 
         # Converting to and reporting with USD since I'm not going to mix currencies
-        for r in gdict: gdict[r] = sum(sec.tmv*fxFromUsdDict[RCURR] for sec in gdict[r])
+        for r in gdict: gdict[r] = sum(sec.tmv*getUSDRate(self.currency) for sec in gdict[r])
         return(ddict)
-        #print("Total Market Value per Region:")
-        #tmvpr = totalMarketValuePerRegion(groupBy(fruitfolio, "region"))
-        #[print(f"\t{r}: ${tmvpr[r]:.2f}") for r in tmvpr]
+
+def getUSDRate(curr):
+    """For given a currency's ISO4217 code, returns the rate against the USD. ex 'USD' will return 1.""" 
+    # FX Rates for each currency from USD: e.g. $100 USD * .85 = 85 GBP
+    fxFromUsdDict = {'USD': 1, 'GBP': .85, 'CNY': 6.35, 'JPY': 0.015}
+    return fxFromUsdDict[curr]

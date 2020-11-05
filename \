@@ -28,15 +28,4 @@ print("EPS > 0:")
 [print(f"\t{sec.ticker}: {sec.currency}${sec.eps}") for sec in p.positiveEpsOnly()]
 
 print(f"Total Market Value > $1,000,000:")
-[print(f"\t{sec.ticker}: ${sec.tmv:.2f}") for sec in p.tmvGreaterThanOneMillionUSD()]
-
-
-for a in ["region", "country", "currency"]:
-    print("-----")
-    print(f"Grouping by {a}:")
-    attrgroup = ff.SecurityGrouping(p, a)
-    print(attrgroup)
-
-    print(f"Largest weight in {a}:")
-    lwig = attrgroup.largestWeightInGroup()
-    [print(f"\t{r}: {lwig[r].ticker} ({lwig[r].weight})") for r in lwig]
+[print(f"\t{sec.ticker}: ${sec.tmv:.2f}") for sec in p.tmbGreaterThanOneMillionUSD()]
