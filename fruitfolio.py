@@ -32,7 +32,7 @@ class Security: # represents a security in a holding; a 'stock'
 
 class Portfolio:
     def __init__(self, portid, securitylist):
-        self.portid = portid
+        self.portid = portid # portfolio ID
         self.securitylist = securitylist
 
     def groupBy(self, attribute):

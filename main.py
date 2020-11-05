@@ -16,6 +16,7 @@ ff.Security("Jackfruit Jets", "CH00123", 6.03, 'China', 'Asia', 'CNY', 68.87, 13
 ff.Security("Kiwi Konglomerate", "KIWI LN", 5.7, 'UK', 'Europe', 'GBP', 2.77, 50.2, 0.09, 0)
 ]
 
+# '45' is a portfolio ID, and seclist is a list of securities
 p = ff.Portfolio(45, seclist)
 
 if p.validatePortfolioWeight():
